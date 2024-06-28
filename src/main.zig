@@ -1,19 +1,37 @@
 const std = @import("std");
+const SDL = @import("sdl2");
+
+fn sdlPanic() noreturn {
+    const str = @as(?[*:0]const u8, SDL.SDL_GetError()) orelse "unknown error";
+    @panic(std.mem.sliceTo(str, 0));
+}
+
+fn initialize_window()!void {
+    if (SDL.SDL_Init(SDL.SDL_INIT_EVERYTHING) != 0) {
+        sdlPanic();
+    }
+
+    // Create a window
+    const window = SDL.SDL_CreateWindow(
+        null, 
+        SDL.SDL_WINDOWPOS_CENTERED, 
+        SDL.SDL_WINDOWPOS_CENTERED, 
+        800, 
+        600, 
+        SDL.SDL_WINDOW_BORDERLESS
+    ).?;
+
+    const renderer = SDL.SDL_CreateRenderer(
+        window, 
+        -1, 
+        0).?;
+
+}
 
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
+    initialize_window();
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
-
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
-
-    try bw.flush(); // don't forget to flush!
 }
 
 test "simple test" {
