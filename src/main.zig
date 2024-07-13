@@ -2,8 +2,8 @@ const std = @import("std");
 const SDL = @import("sdl2");
 
 const allocator = std.heap.page_allocator;
-var window_width: i32 = 800;
-var window_height: i32 = 600;
+var window_width: u32 = 800;
+var window_height: u32 = 600;
 
 var window: *SDL.SDL_Window = undefined;
 var renderer: *SDL.SDL_Renderer = undefined;
@@ -31,16 +31,16 @@ fn initialize_window()!bool {
         &display_mode
     );
     
-    window_width = display_mode.w;
-    window_height = display_mode.h;
+    window_width = @intCast(display_mode.w);
+    window_height = @intCast(display_mode.h);
 
     // Create a window
     window = SDL.SDL_CreateWindow(
         null, 
         SDL.SDL_WINDOWPOS_CENTERED, 
         SDL.SDL_WINDOWPOS_CENTERED, 
-        window_width, 
-        window_height, 
+        @bitCast(window_width), 
+        @bitCast(window_height), 
         SDL.SDL_WINDOW_BORDERLESS
     ) orelse sdlPanic();
     // defer _ = SDL.SDL_DestroyWindow(window);
@@ -51,17 +51,21 @@ fn initialize_window()!bool {
         0
     ) orelse sdlPanic();
     // defer _ = SDL.SDL_DestroyRenderer(renderer);
+    _ = SDL.SDL_SetWindowFullscreen(
+        window, 
+        SDL.SDL_WINDOW_FULLSCREEN
+    );  
     return true;
 }
 
 fn setup() !void {
-    color_buffer = try allocator.alloc(u32, @intCast(window_width * window_height));
+    color_buffer = try allocator.alloc(u32, window_width * window_height);
     color_buffer_texture = SDL.SDL_CreateTexture(
         renderer, 
         SDL.SDL_PIXELFORMAT_ARGB8888, 
         SDL.SDL_TEXTUREACCESS_STREAMING, 
-        window_width, 
-        window_height
+        @intCast(window_width), 
+        @intCast(window_height)
     ) orelse sdlPanic();
 }
 
@@ -92,7 +96,7 @@ fn render_color_buffer() void  {
         color_buffer_texture,
         null, 
         cb_opaque_ptr, 
-        window_width * @sizeOf(u32)
+        @intCast(window_width * @sizeOf(u32))
     );
     _ = SDL.SDL_RenderCopy(
         renderer, 
@@ -103,8 +107,26 @@ fn render_color_buffer() void  {
 }
 
 fn clear_color_buffer(color: u32) void {
-    for (0..@intCast(window_width * window_height)) |i| {
+    for (0..(window_width * window_height)) |i| {
         color_buffer[i] = color;
+    }
+}
+
+fn draw_rect(x: u32, y:u32, width:u32, height: u32, color: u32) void {
+    for (y..(y+height)) |j| {
+        for(x..(x+width)) |i| {
+            color_buffer[(window_width * j) +  i] = color;
+        }
+    }
+}
+
+fn draw_grid() void {
+    for (0..window_height) |y| {
+        for(0..window_width) |x| {
+            if((y % 10 == 0) or (x % 10 == 0)) {
+                color_buffer[(window_width * y) +  x] = 0xFFFF0000;
+            }
+        }
     }
 }
 
@@ -118,8 +140,11 @@ fn render() void {
     );
     _ = SDL.SDL_RenderClear(renderer);
 
+    // draw_grid();
+    draw_rect(20, 20, 500, 500, 0xFFFF0000);
+
     render_color_buffer();
-    clear_color_buffer(0xFFFFFF00);
+    clear_color_buffer(0xFF000000);
 
     SDL.SDL_RenderPresent(renderer);
 }
