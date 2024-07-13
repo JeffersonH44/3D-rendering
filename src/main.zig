@@ -1,9 +1,17 @@
 const std = @import("std");
 const SDL = @import("sdl2");
 
+const allocator = std.heap.page_allocator;
+const window_width: u32 = 800;
+const window_height: u32 = 600;
+
 var window: *SDL.SDL_Window = undefined;
 var renderer: *SDL.SDL_Renderer = undefined;
+var color_buffer_texture: *SDL.SDL_Texture  = undefined;
+
 var is_running: bool = false;
+var color_buffer: []u32 = undefined;
+
 
 fn sdlPanic() noreturn {
     const str = @as(?[*:0]const u8, SDL.SDL_GetError()) orelse "unknown error";
@@ -21,8 +29,8 @@ fn initialize_window()!bool {
         null, 
         SDL.SDL_WINDOWPOS_CENTERED, 
         SDL.SDL_WINDOWPOS_CENTERED, 
-        800, 
-        600, 
+        window_width, 
+        window_height, 
         SDL.SDL_WINDOW_BORDERLESS
     ) orelse sdlPanic();
     // defer _ = SDL.SDL_DestroyWindow(window);
@@ -36,7 +44,15 @@ fn initialize_window()!bool {
     return true;
 }
 
-fn setup() void {
+fn setup() !void {
+    color_buffer = try allocator.alloc(u32, window_width * window_height);
+    color_buffer_texture = SDL.SDL_CreateTexture(
+        renderer, 
+        SDL.SDL_PIXELFORMAT_ARGB8888, 
+        SDL.SDL_TEXTUREACCESS_STREAMING, 
+        window_width, 
+        window_height
+    ) orelse sdlPanic();
 }
 
 fn process_input() void {
@@ -58,6 +74,30 @@ fn process_input() void {
 fn update() void {
 }
 
+fn render_color_buffer() void  {
+    const cb_raw_ptr: *u32 = &color_buffer[0];
+    const cb_opaque_ptr: ?*const anyopaque = @as(?*const anyopaque, cb_raw_ptr);
+
+    _ = SDL.SDL_UpdateTexture(
+        color_buffer_texture,
+        null, 
+        cb_opaque_ptr, 
+        window_width * @sizeOf(u32)
+    );
+    _ = SDL.SDL_RenderCopy(
+        renderer, 
+        color_buffer_texture, 
+        null, 
+        null
+    );
+}
+
+fn clear_color_buffer(color: u32) void {
+    for (0..(window_width * window_height)) |i| {
+        color_buffer[i] = color;
+    }
+}
+
 fn render() void {
     _ = SDL.SDL_SetRenderDrawColor(
         renderer,
@@ -67,16 +107,25 @@ fn render() void {
         255
     );
     _ = SDL.SDL_RenderClear(renderer);
+
+    render_color_buffer();
+    clear_color_buffer(0xFFFFFF00);
+
     SDL.SDL_RenderPresent(renderer);
+}
+
+fn destroy_window() void  {
+    _ = SDL.SDL_DestroyRenderer(renderer);
+    _ = SDL.SDL_DestroyWindow(window);
+    _ = SDL.SDL_Quit();
+    allocator.free(color_buffer);
 }
 
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     is_running = try initialize_window();
-    defer SDL.SDL_Quit();
-    defer _ = SDL.SDL_DestroyWindow(window);
-    defer _ =  SDL.SDL_DestroyRenderer(renderer);
-    setup();
+    try setup();
+    defer destroy_window();
 
     while (is_running) {
         process_input();
