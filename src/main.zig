@@ -2,8 +2,8 @@ const std = @import("std");
 const SDL = @import("sdl2");
 
 const allocator = std.heap.page_allocator;
-const window_width: u32 = 800;
-const window_height: u32 = 600;
+var window_width: i32 = 800;
+var window_height: i32 = 600;
 
 var window: *SDL.SDL_Window = undefined;
 var renderer: *SDL.SDL_Renderer = undefined;
@@ -23,6 +23,16 @@ fn initialize_window()!bool {
         sdlPanic();
     }
     // defer SDL.SDL_Quit();
+
+    // Use SDL to query what is the fullscreen max. width and height
+    var display_mode: SDL.SDL_DisplayMode = undefined;
+    _ = SDL.SDL_GetCurrentDisplayMode(
+        0, 
+        &display_mode
+    );
+    
+    window_width = display_mode.w;
+    window_height = display_mode.h;
 
     // Create a window
     window = SDL.SDL_CreateWindow(
@@ -45,7 +55,7 @@ fn initialize_window()!bool {
 }
 
 fn setup() !void {
-    color_buffer = try allocator.alloc(u32, window_width * window_height);
+    color_buffer = try allocator.alloc(u32, @intCast(window_width * window_height));
     color_buffer_texture = SDL.SDL_CreateTexture(
         renderer, 
         SDL.SDL_PIXELFORMAT_ARGB8888, 
@@ -93,7 +103,7 @@ fn render_color_buffer() void  {
 }
 
 fn clear_color_buffer(color: u32) void {
-    for (0..(window_width * window_height)) |i| {
+    for (0..@intCast(window_width * window_height)) |i| {
         color_buffer[i] = color;
     }
 }
