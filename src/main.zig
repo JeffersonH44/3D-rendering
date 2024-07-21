@@ -28,7 +28,7 @@ fn setup() !void {
     while (x <= 1) : (x += 0.25) {
         var y: f32 = -1.0;
         while (y <= 1) : (y += 0.25) {
-            var z: f32 = 0;
+            var z: f32 = -1.0;
             while (z <= 1) : (z += 0.25) {
                 const new_point: Vector.vec3_t = .{
                     .x = x,
