@@ -81,6 +81,12 @@ pub fn draw_grid() void {
     }
 }
 
+pub fn draw_pixel(x: u32, y: u32, color: u32) void {
+    if (x < window_width and y < window_height) {
+        color_buffer[(window_width * y) + x] = color;
+    }
+}
+
 
 pub fn destroy_window() void  {
     _ = SDL.SDL_DestroyRenderer(renderer);

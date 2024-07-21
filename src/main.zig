@@ -52,6 +52,7 @@ fn render() void {
     _ = SDL.SDL_RenderClear(Display.renderer);
 
     // draw_grid();
+    Display.draw_pixel(1200, 1200, 0xFFFF0000);
     Display.draw_rect(20, 20, 500, 500, 0xFFFF0000);
 
     Display.render_color_buffer();
