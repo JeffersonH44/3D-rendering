@@ -1,9 +1,12 @@
 const std = @import("std");
 const SDL = @import("sdl2");
 const Display = @import("display.zig");
+const Vector = @import("vector.zig");
 
 const allocator = std.heap.page_allocator;
+const N_POINTS = 9 * 9 * 9;
 
+var cube_points:[N_POINTS]Vector.vec3_t = undefined;
 var is_running: bool = false;
 
 fn setup() !void {
@@ -18,6 +21,27 @@ fn setup() !void {
         @intCast(Display.window_width), 
         @intCast(Display.window_height)
     ) orelse Display.sdlPanic();
+
+    // start loading my array of vectors
+    var point_count: usize = 0;
+    var x: f32 = -1.0;
+    while (x <= 1) : (x += 0.25) {
+        var y: f32 = -1.0;
+        while (y <= 1) : (y += 0.25) {
+            var z: f32 = 0;
+            while (z <= 1) : (z += 0.25) {
+                const new_point: Vector.vec3_t = .{
+                    .x = x,
+                    .y = y,
+                    .z = z
+                };
+                cube_points[point_count] = new_point;
+                point_count += 1;
+            }
+        }
+    }
+
+
 }
 
 fn process_input() void {
@@ -67,6 +91,7 @@ pub fn main() !void {
     is_running = try Display.initialize_window();
     try setup();
     defer Display.destroy_window();
+
 
     while (is_running) {
         process_input();
