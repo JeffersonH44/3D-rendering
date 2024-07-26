@@ -63,10 +63,14 @@ pub fn clear_color_buffer(color: u32) void {
     }
 }
 
-pub fn draw_rect(x: u32, y:u32, width:u32, height: u32, color: u32) void {
-    for (y..(y+height)) |j| {
-        for(x..(x+width)) |i| {
-            color_buffer[(window_width * j) +  i] = color;
+pub fn draw_rect(x: i32, y:i32, width:u32, height: u32, color: u32) void {
+    const c_height: usize = @intCast(height);
+    const c_width: usize = @intCast(width);
+    for(0..c_width) |i| {
+        for(0..c_height) |j| {
+            const cast_i: i32 = @intCast(i);
+            const cast_j: i32 = @intCast(j);
+            draw_pixel(x + cast_i, y + cast_j, color);
         }
     }
 }
@@ -81,9 +85,11 @@ pub fn draw_grid() void {
     }
 }
 
-pub fn draw_pixel(x: u32, y: u32, color: u32) void {
-    if (x < window_width and y < window_height) {
-        color_buffer[(window_width * y) + x] = color;
+pub fn draw_pixel(x: i32, y: i32, color: u32) void {
+    if (x >= 0 and y >= 0 and x < window_width and y < window_height) {
+        const casted_x: u32 = @intCast(x);
+        const casted_y: u32 = @intCast(y);
+        color_buffer[(window_width * casted_y) + casted_x] = color;
     }
 }
 

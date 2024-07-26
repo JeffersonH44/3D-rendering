@@ -5,8 +5,10 @@ const Vector = @import("vector.zig");
 
 const allocator = std.heap.page_allocator;
 const N_POINTS = 9 * 9 * 9;
+const fov_factor: f32 = 128;
 
 var cube_points:[N_POINTS]Vector.vec3_t = undefined;
+var projected_points:[N_POINTS]Vector.vec2_t = undefined;
 var is_running: bool = false;
 
 fn setup() !void {
@@ -60,24 +62,39 @@ fn process_input() void {
     }
 }
 
+fn project(point: Vector.vec3_t) Vector.vec2_t {
+    const projected_point: Vector.vec2_t = .{
+        .x = (fov_factor * point.x),
+        .y = (fov_factor * point.y)
+    };
+
+    return projected_point;
+}
+
 fn update() void {
+    for (cube_points, 0..) |point, i| {
+        const projected_point = project(point);
+        projected_points[i] = projected_point;
+    }
 }
 
 
 
 fn render() void {
-    _ = SDL.SDL_SetRenderDrawColor(
-        Display.renderer,
-        255, 
-        0,
-        0, 
-        255
-    );
-    _ = SDL.SDL_RenderClear(Display.renderer);
-
-    // draw_grid();
-    Display.draw_pixel(1200, 1200, 0xFFFF0000);
-    Display.draw_rect(20, 20, 500, 500, 0xFFFF0000);
+    for (projected_points) |projected_point| {
+        const casted_x: i32 = @intFromFloat(projected_point.x);
+        const casted_y: i32 = @intFromFloat(projected_point.y);
+        const translate_x: i32 = @intCast(Display.window_width / 2);
+        const translate_y: i32 = @intCast(Display.window_height / 2);
+        // std.debug.print("number {d}\n", .{translate_x});
+        Display.draw_rect(
+            casted_x + translate_x, 
+            casted_y + translate_y, 
+            4, 
+            4, 
+            0xFFFFFF00
+        );
+    }
 
     Display.render_color_buffer();
     Display.clear_color_buffer(0xFF000000);
