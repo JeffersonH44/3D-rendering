@@ -1,5 +1,6 @@
 const std = @import("std");
 const SDL = @import("sdl2");
+const Vector = @import("vector.zig");
 
 const allocator = std.heap.page_allocator;
 

@@ -5,11 +5,17 @@ const Vector = @import("vector.zig");
 
 const allocator = std.heap.page_allocator;
 const N_POINTS = 9 * 9 * 9;
-const fov_factor: f32 = 128;
+const fov_factor: f32 = 640;
 
 var cube_points:[N_POINTS]Vector.vec3_t = undefined;
 var projected_points:[N_POINTS]Vector.vec2_t = undefined;
 var is_running: bool = false;
+
+var camera_position: Vector.vec3_t = .{
+    .x = 0,
+    .y = 0,
+    .z = -5
+};
 
 fn setup() !void {
     Display.color_buffer = try allocator.alloc(
@@ -64,8 +70,8 @@ fn process_input() void {
 
 fn project(point: Vector.vec3_t) Vector.vec2_t {
     const projected_point: Vector.vec2_t = .{
-        .x = (fov_factor * point.x),
-        .y = (fov_factor * point.y)
+        .x = (fov_factor * point.x) / point.z,
+        .y = (fov_factor * point.y) / point.z
     };
 
     return projected_point;
@@ -73,7 +79,18 @@ fn project(point: Vector.vec3_t) Vector.vec2_t {
 
 fn update() void {
     for (cube_points, 0..) |point, i| {
-        const projected_point = project(point);
+        // move the points away the camera
+        const camera_point: Vector.vec3_t = .{
+            .x = point.x,
+            .y = point.y,
+            .z = point.z - camera_position.z
+        };
+        // point.z -= camera_position.z;
+
+        // project the current point
+        const projected_point = project(camera_point);
+
+        // save the projected 2D vector in the array of projected points
         projected_points[i] = projected_point;
     }
 }
